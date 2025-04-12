@@ -53,19 +53,28 @@ pip install solace-agent-mesh
 ```
 
 <details>
-    <summary>Windows-Specific Setup</summary>
+    <summary>PlantUML Installation Guide</summary>
 
-    **PlantUML Support**
+    <p><strong>Note:</strong> Installing PlantUML on the local machine is required to create PlantUML diagrams. Without proper installation, the PlantUML functionality will not be available.</p>
 
-    The functionality from PlantUML is not available on Windows.  To use PlantUML on Windows, we recommend you install SAM on Windows Subsystem for Linux (WSL).
+    <h3>Installation Instructions</h3>
 
-    **Plotly Support**
+    <h4>Linux</h4>
+    <ul>
+        <li><strong>Ubuntu/Debian:</strong> <code>sudo apt install plantuml</code></li>
+        <li><strong>Fedora/RHEL:</strong> <code>sudo dnf install plantuml</code></li>
+        <li><strong>Arch Linux:</strong> <code>sudo pacman -S plantuml</code></li>
+    </ul>
 
-    Windows Users: To enable Plotly visualization capabilities, you must install a specific version of the Kaleido package before launching the application:
-    ```sh
-    pip install --upgrade "kaleido==0.1.*"
-    ```
-    This step is required only for Windows environments.
+    <h4>Windows</h4>
+    <ul>
+        <li>Using <a href="https://docs.chocolatey.org/en-us/choco/setup/">Chocolatey</a>: <code>choco install plantuml</code></li>
+    </ul>
+
+    <h4>macOS</h4>
+    <ul>
+        <li>Using Homebrew: <code>brew install plantuml</code></li>
+    </ul>
 </details>
 
 2. Run the following SAM CLI command (`solace-agent-mesh`) to verify your installation:
