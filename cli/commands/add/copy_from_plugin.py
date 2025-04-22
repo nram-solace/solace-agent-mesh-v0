@@ -83,7 +83,7 @@ def copy_from_plugin(name, plugin_name, entity_type):
         log_error("Invalid entity type.")
         return 1
 
-    temp_file = os.path.join(config_directory, "__TEMPLATES_WILL_BE_HERE__")
+    temp_file = os.path.join(config_directory, ".gitkeep")
     if os.path.exists(temp_file):
         os.remove(temp_file)
 
