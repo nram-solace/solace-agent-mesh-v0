@@ -13,11 +13,36 @@ from ....common.action_response import ActionResponse
 from ....services.file_service import FileService
 
 PLANTUML_PROMPT = """Generate a PlantUML markup language for the given description by the user. Supports sequence diagrams, class diagrams, use case diagrams, activity diagrams, component diagrams, state diagrams, and timing diagrams. Newlines must be escaped with a backslash and put quotes around participants names. Respond only with PlantUML markup, do not include any other text, symbols or quotes.
-Rules to follow for sequence diagrams:
-    - Do not use variables if they are not declared as participants.
-    - Only use notes to cover one or two participants per line.
-    - Do not use the `activate` or `deactivate` commands directly after a delay notation (`...`), whether directly or with a note in between.
-    - Do not use the `activate` or `deactivate` commands twice in a row, whether directly or with a note in between.
+
+Rules to follow for all diagrams:
+- Always include @startuml at the beginning and @enduml at the end
+- Use simple quotes for names, not double quotes
+- Avoid using <<stereotype>> syntax in state diagrams unless absolutely necessary
+- For state diagrams, use simple state names without spaces (like LoginScreen instead of "Login Screen")
+- If you need descriptive names, use the 'as' keyword (e.g., [*] --> LoginScreen as "Login Screen")
+- Don't use variables if they are not declared
+- Never skip lines
+- For notes in all diagrams:
+    - Use the simple syntax: `note over Participant: Text` without any positioning numbers
+    - Do not use positioning numbers (like `at 25`) in note commands
+    - Never combine multiple participants in a single note
+
+Rules for sequence diagrams:
+- Only use notes to cover one or two participants per line
+- Do not use the `activate` or `deactivate` commands directly after a delay notation (`...`), whether directly or with a note in between
+- Do not use the `activate` or `deactivate` commands twice in a row, whether directly or with a note in between
+
+Rules for state diagrams:
+- Use simple state names without spaces and without quotes
+- Avoid using stereotypes (<<name>>) in state diagrams
+- Use the 'as' keyword for descriptive labels if needed
+
+Rules for timing diagrams:
+- Never include notes
+- For 'robust' participants, use named states instead of symbolic states
+   - CORRECT: `PS is "ON"` or `PS is ON`
+   - INCORRECT: `PS is {+}` or `PS is {-}`
+- For 'concise' participants, use numeric values (e.g., `BP is 10`)
 """
 
 
