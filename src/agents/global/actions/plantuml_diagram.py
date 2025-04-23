@@ -32,10 +32,25 @@ Rules for sequence diagrams:
 - Do not use the `activate` or `deactivate` commands directly after a delay notation (`...`), whether directly or with a note in between
 - Do not use the `activate` or `deactivate` commands twice in a row, whether directly or with a note in between
 
+Rules for activity diagrams:
+- Do not use the `backward:` keyword for loops or returning to previous steps
+- Instead, use the label and goto pattern:
+  1. Add a label to the target activity: `label label_name`
+  2. Use goto to reference that label: `goto label_name`
+- Always place labels immediately after the activity they refer to
+- Labels should use lowercase with underscores for readability (e.g., `label browse_products`)
+
 Rules for state diagrams:
 - Use simple state names without spaces and without quotes
-- Avoid using stereotypes (<<name>>) in state diagrams
-- Use the 'as' keyword for descriptive labels if needed
+- When stereotypes are absolutely necessary, use the correct syntax:
+  - For existing states: `state StateName <<stereotype>>`
+  - For new states with descriptions: `state "Description" as StateName <<stereotype>>`
+- Always place stereotypes after the state name, not before
+- If using skinparam for stereotype styling, ensure it's properly defined: `skinparam state \{ BackgroundColor<<stereotype>> Color\}
+- For notes in state diagrams:
+  - Do NOT use `note over StateName` syntax (this is for sequence diagrams)
+  - Instead use directional positioning: `note left of StateName`, `note right of StateName`, `note top of StateName`, or `note bottom of StateName`
+  - Example: `note left of OrderCreated : Initial customer order`
 
 Rules for timing diagrams:
 - Never include notes
