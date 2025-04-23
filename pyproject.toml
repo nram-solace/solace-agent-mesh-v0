@@ -39,11 +39,11 @@ dependencies = [
     "pytest~=8.3.1",
     "pytest-cov~=5.0.0",
     "pyperclip~=1.9.0",
-    "solace-ai-connector @ git+https://github.com/SolaceDev/solace-ai-connector.git@hugo/ai-693/production-server",
-    "solace-ai-connector[websocket] @ git+https://github.com/SolaceDev/solace-ai-connector.git@hugo/ai-693/production-server",
-    "solace-ai-connector[llm] @ git+https://github.com/SolaceDev/solace-ai-connector.git@hugo/ai-693/production-server",
-    "solace-ai-connector-web @ git+https://github.com/SolaceLabs/solace-ai-connector-web.git@hugo/ai-693/production-server",
-    "solace-ai-connector-rest @ git+https://github.com/SolaceLabs/solace-ai-connector-rest.git@hugo/ai-693/production-server",
+    "solace-ai-connector~=1.0.3",
+    "solace-ai-connector[websocket]~=1.0.3",
+    "solace-ai-connector[llm]~=1.0.3",
+    "solace-ai-connector-web~=0.2.2",
+    "solace-ai-connector-rest~=0.0.3",
     "solace-ai-connector-slack~=0.0.2",
   ]
 
@@ -57,7 +57,7 @@ documentation = "https://github.com/SolaceLabs/solace-agent-mesh/blob/main/docs/
 "configs" = "solace_agent_mesh/configs"
 "templates" = "solace_agent_mesh/templates"
 "cli" = "solace_agent_mesh/cli"
-"web-visualizer/dist" = "solace_agent_mesh/assets/web-visualizer"
+#"web-visualizer/dist" = "solace_agent_mesh/assets/web-visualizer"
 "config_portal/frontend/static" = "solace_agent_mesh/config_portal/frontend/static"
 "config_portal/backend" = "solace_agent_mesh/config_portal/backend"
 "config_portal/__init__.py" = "solace_agent_mesh/config_portal/__init__.py"
