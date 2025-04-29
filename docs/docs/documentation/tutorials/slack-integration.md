@@ -1,6 +1,6 @@
 ---
 title: Slack Integration
-sidebar_position: 30
+sidebar_position: 50
 ---
 
 # Slack Integration
