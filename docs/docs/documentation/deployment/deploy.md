@@ -40,8 +40,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY ./pyproject.toml /app/pyproject.toml
-RUN python3.10 -m pip install --no-cache-dir .
+COPY ./requirements.txt /app/requirements.txt
+RUN python3.10 -m pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy project files
 COPY . /app
@@ -60,13 +60,21 @@ USER samapp
 ENTRYPOINT ["solace-agent-mesh", "run", "--use-system-env"]
 
 # Default command for running multiple configurations
-CMD [
-     "build/configs/orchestrator.yaml",
-     "build/configs/service_llm.yaml",
-     "build/configs/service_embedding.yaml",
-     "build/configs/agent_global.yaml"
-]
+CMD [ "build/configs/orchestrator.yaml", "build/configs/service_llm.yaml", \
+"build/configs/service_embedding.yaml", "build/configs/agent_global.yaml"]
 ```
+
+And the following `.dockerignore`
+
+```
+.env
+*.log
+build
+.git
+.vscode
+.DS_Store
+```
+
 
 ### Kubernetes Deployment
 
