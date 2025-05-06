@@ -255,9 +255,26 @@ class OrchestratorStimulusProcessorComponent(LLMRequestComponent):
 
     def post_llm(self, message: Message, data) -> Message:
         """Handle LLM responses"""
+        user_properties = message.get_user_properties()
+        gateway_id = user_properties.get("gateway_id", "unknown")
+        # Check if this is a an error response from the LLM service
+        if isinstance(data, dict) and data.get("error"):
+            error_message = data.get("content", "An error occurred while processing your request.")
+            # Return the error message to the user, re-invoke the LLM
+            return [
+                {
+                    "payload": {
+                        "text": error_message,
+                        "identity": user_properties.get("identity"),
+                        "channel": user_properties.get("channel"),
+                        "thread_ts": user_properties.get("thread_ts"),
+                        "action_response_reinvoke": True
+                    },
+                    "topic": f"{os.getenv('SOLACE_AGENT_MESH_NAMESPACE')}solace-agent-mesh/v1/stimulus/orchestrator/reinvokeModel"
+                }
+            ]
         content = data.get("content", "")
         response_obj = parse_orchestrator_response(content, last_chunk=True)
-        user_properties = message.get_user_properties()
         session_id = user_properties.get("session_id")
 
         # Check if there was a parsing error
