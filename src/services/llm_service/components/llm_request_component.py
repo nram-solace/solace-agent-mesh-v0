@@ -254,14 +254,14 @@ class LLMRequestComponent(ComponentBase):
                     first_chunk,
                     True,
                 )
-            # Return the final result
-            return {
-                "content": aggregate_result,
-                "response_uuid": response_uuid,
-                "streaming": True,
-                "last_chunk": True,
-                "error": error
-            }
+        # Return the final result
+        return {
+            "content": aggregate_result,
+            "response_uuid": response_uuid,
+            "streaming": True,
+            "last_chunk": True,
+            "error": error
+        }
 
     def _create_llm_message(self, message: Message, messages: list, source_info: dict) -> Message:
         """
