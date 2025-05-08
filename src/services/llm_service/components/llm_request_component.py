@@ -195,49 +195,72 @@ class LLMRequestComponent(ComponentBase):
         aggregate_result = ""
         current_batch = ""
         first_chunk = True
+        error = False
 
-        for response_message, last_message in self.do_broker_request_response(
-            llm_message,
-            stream=True,
-            streaming_complete_expression="input.payload:last_chunk",
-        ):
-            # Only process if the stimulus UUIDs correlate
-            if not self._correlate_request_and_response(input_message, response_message):
-                log.error("Mismatched request and response stimulus UUIDs: %s %s",
-                        self._get_user_propery(input_message, "stimulus_uuid"),
-                        self._get_user_propery(response_message, "stimulus_uuid"))                
-                raise ValueError("Mismatched request and response stimulus UUIDs")
+        try:
+            for response_message, last_message in self.do_broker_request_response(
+                llm_message,
+                stream=True,
+                streaming_complete_expression="input.payload:last_chunk",
+            ):
+                # Only process if the stimulus UUIDs correlate
+                if not self._correlate_request_and_response(input_message, response_message):
+                    log.error("Mismatched request and response stimulus UUIDs: %s %s",
+                            self._get_user_propery(input_message, "stimulus_uuid"),
+                            self._get_user_propery(response_message, "stimulus_uuid"))
+                    raise ValueError("Mismatched request and response stimulus UUIDs")
 
-            payload = response_message.get_payload()
-            content = payload.get("chunk", "")
-            aggregate_result += content
-            current_batch += content
+                payload = response_message.get_payload()
+                content = payload.get("chunk", "")
+                aggregate_result += content
+                current_batch += content
 
-            if payload.get("handle_error", False):
-                log.error("Error invoking LLM service: %s", payload.get("content", ""), exc_info=True)
-                aggregate_result = payload.get("content", None)
-                last_message = True
+                if payload.get("handle_error", False):
+                    log.error("Error invoking LLM service: %s", payload.get("content", ""), exc_info=True)
+                    aggregate_result = payload.get("content", None)
+                    last_message = True
+                    error = True
 
-            if len(current_batch.split()) >= self.stream_batch_size or last_message:
+                if len(current_batch.split()) >= self.stream_batch_size or last_message:
+                    self._send_streaming_chunk(
+                        input_message,
+                        current_batch,
+                        aggregate_result,
+                        response_uuid,
+                        first_chunk,
+                        last_message,
+                    )
+                    current_batch = ""
+                    first_chunk = False
+
+                if last_message:
+                    break
+        except TimeoutError as e:
+            log.error("Timeout error during streaming: %s", e, exc_info=True)
+            aggregate_result = "That request took too long to process. Try again with a more focused request or by breaking it in smaller parts."
+            error = True
+        except Exception as e:
+            log.error("Error during streaming: %s", e, exc_info=True)
+            aggregate_result = f"I apologize, but I encountered an error while processing your request: {str(e)}"
+            error = True
+        finally:
+            # Send a final error chunk if there was an error
+            if error:
                 self._send_streaming_chunk(
                     input_message,
-                    current_batch,
+                    aggregate_result,
                     aggregate_result,
                     response_uuid,
                     first_chunk,
-                    last_message,
+                    True,
                 )
-                current_batch = ""
-                first_chunk = False
-
-            if last_message:
-                break
-
+        # Return the final result
         return {
             "content": aggregate_result,
             "response_uuid": response_uuid,
             "streaming": True,
             "last_chunk": True,
+            "error": error
         }
 
     def _create_llm_message(self, message: Message, messages: list, source_info: dict) -> Message:

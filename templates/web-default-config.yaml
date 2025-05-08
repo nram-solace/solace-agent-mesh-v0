@@ -4,5 +4,7 @@
     max_file_size: 2000 # 2GB
 
 - response_format_prompt: &response_format_prompt >
-    Return all responses in markdown format. When returning files or images, use the <{{tag_prefix}}file> tags.
-    Do not return files as links or with generic <file> tags.
+    Use markdown formatting for text responses.
+    FILE HANDLING REQUIREMENTS:
+    - ALWAYS use <{{tag_prefix}}file> tags for files/images
+    - NEVER use markdown image/link syntax or generic HTML tags for files

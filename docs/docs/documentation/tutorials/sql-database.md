@@ -1,6 +1,6 @@
 ---
 title: SQL Database Integration - sqlite3, MySQL, PostgreSQL
-sidebar_position: 20
+sidebar_position: 40
 ---
 
 # SQL Database Integration

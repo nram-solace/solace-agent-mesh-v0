@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import Button from '../ui/Button';
-import { builtinAgents } from './BuiltinAgentSetup';
+import {BUILTIN_AGENTS } from './BuiltinAgentSetup';
 import {
   PROVIDER_PREFIX_MAP,
   EMBEDDING_PROVIDER_PREFIX_MAP,
   IMAGE_GEN_PROVIDER_PREFIX_MAP,
   LLM_PROVIDER_OPTIONS,
+  formatModelName,
 } from '../../common/providerModels';
 
 type CompletionStepProps = {
@@ -19,6 +20,7 @@ const CAPITALIZED_WORDS = ['llm', 'ai', 'api', 'url', 'vpn'];
 
 // Sensitive fields that should be hidden
 const SENSITIVE_FIELDS = ['broker_password', 'llm_api_key', 'embedding_api_key'];
+
 // Group configuration items by category
 const CONFIG_GROUPS: Record<string, string[]> = {
   Project: ['namespace'],
@@ -39,18 +41,16 @@ export default function CompletionStep({ data, updateData, onPrevious }: Readonl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Create a mapping of agent IDs to their information
   const agentMapping = useMemo(() => {
-    const mapping: Record<
-      string,
-      { name: string; envVars?: string[] }
-    > = {};
-    builtinAgents.forEach((agent) => {
+    const mapping: Record<string, { name: string }> = {};
+    
+    // Map each agent ID to its name
+    Object.values(BUILTIN_AGENTS).forEach((agent) => {
       mapping[agent.id] = {
-        name: agent.name,
-        envVars: agent.envVars?.map((env) => env.key),
+        name: agent.name
       };
     });
+    
     return mapping;
   }, []);
 
@@ -377,11 +377,10 @@ export default function CompletionStep({ data, updateData, onPrevious }: Readonl
     if (data.namespace && !data.namespace.endsWith('/')) {
       data.namespace += '/';
     }
-    if (data.container_started){
+    if (data.container_started) {
       //remove container_started from data
       delete data.container_started;
     }
-
     // first dereference the providers to the actual prefixes
     if (data.llm_provider) {
       data.llm_provider = PROVIDER_PREFIX_MAP[data.llm_provider];
@@ -390,22 +389,23 @@ export default function CompletionStep({ data, updateData, onPrevious }: Readonl
       data.embedding_provider = EMBEDDING_PROVIDER_PREFIX_MAP[data.embedding_provider];
     }
     
-    //join provider and model name
-    if (data.llm_model_name && data.llm_provider){
-      data.llm_model_name = `${data.llm_provider}/${data.llm_model_name}`;
-      delete data.llm_provider
+    //join provider and model name for LLM
+    if (data.llm_model_name && data.llm_provider) {
+      data.llm_model_name = formatModelName(data.llm_model_name, data.llm_provider);
+      delete data.llm_provider;
     }
-
+    
     // if embedding service is not enabled, put empty strings for embedding fields
-    if (!data.embedding_service_enabled){
+    if (!data.embedding_service_enabled) {
       data.embedding_api_key = "";
       data.embedding_model_name = "";
       data.embedding_endpoint_url = "";
-      
     }
-    if (data.embedding_model_name && data.embedding_provider){
-      data.embedding_model_name = `${data.embedding_provider}/${data.embedding_model_name}`;
-      delete data.embedding_provider
+    
+    // Join provider and model name for embeddings
+    if (data.embedding_model_name && data.embedding_provider) {
+      data.embedding_model_name = formatModelName(data.embedding_model_name, data.embedding_provider);
+      delete data.embedding_provider;
     }
 
     // Handle image generation provider and model in env_var
@@ -428,8 +428,8 @@ export default function CompletionStep({ data, updateData, onPrevious }: Readonl
         // Get the provider prefix
         const providerPrefix = IMAGE_GEN_PROVIDER_PREFIX_MAP[imageGenProvider] || imageGenProvider;
         
-        // Format the model name
-        const formattedModel = `${providerPrefix}/${imageGenModel}`;
+        // Format the model name using the utility function
+        const formattedModel = formatModelName(imageGenModel, providerPrefix);
         
         // Update env_var array
         data.env_var = data.env_var.map((env: string) => {
