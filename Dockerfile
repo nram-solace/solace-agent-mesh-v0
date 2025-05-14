@@ -10,6 +10,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Installing the Solace Agent Mesh package
+RUN python3.11 -m pip install --no-cache-dir solace-agent-mesh
+
 # Create a non-root user
 RUN groupadd -r samapp && useradd -r -g samapp samapp
 RUN chown -R samapp:samapp /app /tmp
@@ -19,5 +22,5 @@ USER samapp
 
 LABEL org.opencontainers.image.source https://github.com/SolaceLabs/solace-agent-mesh
 
-# Default entry point
+# CLI entry point
 ENTRYPOINT ["solace-agent-mesh"]
