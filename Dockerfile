@@ -1,23 +1,23 @@
-# Stage 1: Build
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# Install only runtime system dependencies
+# Install dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends plantuml graphviz git && \
     apt-get purge -y --auto-remove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+# Create a non-root user
+RUN groupadd -r samapp && useradd -r -g samapp samapp
+RUN chown -R samapp:samapp /app /tmp
 
-# Install dependencies using secret
-RUN python3.11 -m pip install --no-cache-dir .
-
-ENV PYTHONUNBUFFERED=1
-
+# Switch to non-root user
+USER samapp
 
 LABEL org.opencontainers.image.source https://github.com/SolaceLabs/solace-agent-mesh
 
-ENTRYPOINT ["python", "cli/main.py"]
+# Default entry point
+ENTRYPOINT ["solace-agent-mesh"]
