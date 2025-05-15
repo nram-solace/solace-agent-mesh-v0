@@ -24,4 +24,13 @@ class CustomBuildHook(BuildHookInterface):
             stderr.write("\n### npm run build\n")
             subprocess.run([npm, "run", "build"], check=True)
         finally:
+            os.chdir("../..")
+
+        os.chdir("web-visualizer/")
+        try:
+            stderr.write("### npm install\n")
+            subprocess.run([npm, "install"], check=True)
+            stderr.write("\n### npm run build\n")
+            subprocess.run([npm, "run", "build"], check=True)
+        finally:
             os.chdir("..")
