@@ -1,23 +1,37 @@
-# Stage 1: Build
 FROM python:3.11-slim
 
-WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
-# Install only runtime system dependencies
+# Install dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends plantuml graphviz git && \
+    apt-get install -y --no-install-recommends plantuml graphviz git curl && \
+    curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
     apt-get purge -y --auto-remove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+# Building the Solace Agent Mesh package
+WORKDIR /sam-temp
+COPY . /sam-temp
+RUN python3.11 -m pip install --no-cache-dir hatch
+RUN python3.11 -m hatch build
 
-# Install dependencies using secret
-RUN python3.11 -m pip install --no-cache-dir .
+# Install the Solace Agent Mesh package
+RUN python3.11 -m pip install --no-cache-dir dist/solace_agent_mesh-*.whl
 
-ENV PYTHONUNBUFFERED=1
+# Clean up temporary files
+WORKDIR /app
+RUN rm -rf /sam-temp
 
+# Create a non-root user
+# RUN groupadd -r samapp && useradd -r -g samapp samapp
+# RUN chown -R samapp:samapp /app /tmp
 
-LABEL org.opencontainers.image.source https://github.com/SolaceLabs/solace-agent-mesh
+# # Switch to non-root user
+# USER samapp
 
-ENTRYPOINT ["python", "cli/main.py"]
+LABEL org.opencontainers.image.source=https://github.com/SolaceLabs/solace-agent-mesh
+
+# CLI entry point
+ENTRYPOINT ["solace-agent-mesh"]

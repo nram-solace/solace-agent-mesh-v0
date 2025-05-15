@@ -28,20 +28,12 @@ For a production environment, using a containerized and reproducible setup. We r
 Below is a sample Dockerfile for a Solace Agent Mesh project:
 
 ```Dockerfile
-FROM python:3.10-slim
-ENV PYTHONUNBUFFERED=1
+FROM solace/solace-agent-mesh:latest
 WORKDIR /app
-
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends plantuml graphviz git && \
-    apt-get purge -y --auto-remove && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY ./requirements.txt /app/requirements.txt
-RUN python3.10 -m pip install --no-cache-dir -r /app/requirements.txt
+RUN python3.11 -m pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy project files
 COPY . /app
@@ -49,19 +41,12 @@ COPY . /app
 # Build Solace Agent Mesh
 RUN solace-agent-mesh build
 
-# Create a non-root user
-RUN groupadd -r samapp && useradd -r -g samapp samapp
-RUN chown -R samapp:samapp /app /tmp
 
-# Switch to non-root user
-USER samapp
+CMD ["run", "--use-system-env"]
 
-# Default entry point
-ENTRYPOINT ["solace-agent-mesh", "run", "--use-system-env"]
+# To run one specific component, use:
+# CMD ["run", "--use-system-env", "build/configs/orchestrator.yaml"]
 
-# Default command for running multiple configurations
-CMD [ "build/configs/orchestrator.yaml", "build/configs/service_llm.yaml", \
-"build/configs/service_embedding.yaml", "build/configs/agent_global.yaml"]
 ```
 
 And the following `.dockerignore`

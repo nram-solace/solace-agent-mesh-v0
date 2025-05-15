@@ -35,6 +35,17 @@ solace-agent-mesh init
 During initialization, you can choose to configure your project directly in the terminal or through a web-based interface launched at `http://127.0.0.1:5002`. You will
 be asked for your preference once you run `solace-agent-mesh init`.
 
+<details>
+  <summary>Docker Alternative for Initialization</summary>
+
+You can also initialize your Solace Agent Mesh project using the official Docker image. This is helpful if you want to avoid local Python/SAM CLI installation or prefer a containerized workflow from the start.
+
+```sh
+docker run --rm -it -v "$(pwd):/app" -p 5002:5002 solace/solace-agent-mesh:latest init --use-web-based-init
+```
+
+</details>
+
 :::tip[Non-Interactive Mode]
 You can run the `init` command in a non-interactive mode by passing `--skip` and all the other configurations as arguments.
 
@@ -61,6 +72,18 @@ Your project configurations have been written to the `solace-agent-mesh.yaml` fi
 The build command generates all the respective [solace-ai-connector](../user-guide/solace-ai-connector.md) configuration files. Solace AI Event Connector is the underlying library that runs all the components and connects Solace Agent Mesh to a Solace PubSub+ event broker.
 
 To build the project, run the following command:
+
+
+<details>
+  <summary>Docker Alternative for Building</summary>
+
+```sh
+docker run --rm -v "$(pwd):/app" solace/solace-agent-mesh:latest build
+```
+
+The `build/` directory will be created in your project directory on your host machine, containing all the generated configuration files.
+
+</details>
 
 ```sh
 solace-agent-mesh build

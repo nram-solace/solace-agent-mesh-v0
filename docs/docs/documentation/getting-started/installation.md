@@ -54,6 +54,17 @@ python3 -m venv .venv
 ```sh
 pip install solace-agent-mesh
 ```
+:::info Docker Alternative
+Alternatively, you can use our pre-built Docker image to run SAM CLI commands without a local Python installation. This is useful for quick tasks or CI/CD environments.
+
+To verify the installation using Docker, you can run:
+```sh
+docker run --rm solace/solace-agent-mesh:latest --version
+```
+This command pulls the latest image (if not already present) and executes `solace-agent-mesh --version` inside the container. The `--rm` flag ensures the container is removed after execution.
+
+For more complex operations like building a project, you'll need to mount your project directory into the container. See the [Quick Start guide](./quick-start.md) for an example.
+:::
 
 <details>
     <summary>PlantUML Installation Guide</summary>
