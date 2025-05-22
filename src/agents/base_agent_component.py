@@ -109,90 +109,86 @@ class BaseAgentComponent(LLMServiceComponentBase, ABC):
             "actions": self.get_actions_summary(),
         }
 
-    def invoke(self, message, data):
-        """Invoke the component"""
-        action_name = data.get("action_name")
-        action_response = None
-        file_service = FileService()
+    def _handle_action_validation(self, action_name, data):
         if not action_name:
             log.error("Action name not provided. Data: %s", json.dumps(data))
-            action_response = ActionResponse(
+            return ActionResponse(
                 message="Internal error: Action name not provided. Please try again",
             )
-        else:
-            action = self.action_list.get_action(action_name)
-            if not action:
-                log.error(
-                    "Action not found: %s. Data: %s", action_name, json.dumps(data)
-                )
-                action_response = ActionResponse(
-                    message="Internal error: Action not found. Please try again",
-                )
-            else:
-                resolved_params = data.get("action_params", {}).copy()
-                user_properties = message.get_user_properties() or {}
-                session_id = user_properties.get("session_id")
-                identity = user_properties.get("identity")
+        action = self.action_list.get_action(action_name)
+        if not action:
+            log.error(
+                "Action not found: %s. Data: %s", action_name, json.dumps(data)
+            )
+            return ActionResponse(
+                message="Internal error: Action not found. Please try again",
+            )
+        return action
 
-                try:
-                    resolved_params = recursive_file_resolver(
-                        resolved_params,
-                        resolver=file_service.resolve_all_resolvable_urls,
-                        session_id=session_id,
-                    )
-                except Exception as e:
-                    log.error(
-                        "Error resolving file service URLs: %s. Data: %s",
-                        str(e),
-                        json.dumps(data),
-                        exc_info=True,
-                    )
-                    action_response = ActionResponse(
-                        message=f"Error resolving file URLs. Details: {str(e)}",
-                    )
+    def _resolve_action_parameters(self, params, session_id, data, file_service):
+        try:
+            resolved_params = recursive_file_resolver(
+                params,
+                resolver=file_service.resolve_all_resolvable_urls,
+                session_id=session_id,
+            )
+            return resolved_params, None
+        except Exception as e:
+            log.error(
+                "Error resolving file service URLs: %s. Data: %s",
+                str(e),
+                json.dumps(data),
+                exc_info=True,
+            )
+            return params, ActionResponse(
+                message=f"Error resolving file URLs. Details: {str(e)}",
+            )
 
-                middleware_service = MiddlewareService()
-                if middleware_service.get("base_agent_filter")(user_properties, action):
-                    try:
-                        meta = {
-                            "session_id": session_id,
-                            "identity": identity,
-                        }
-                        action_response = action.invoke(resolved_params, meta)
-                    except Exception as e:
+    def _execute_action(self, action, resolved_params, user_properties, action_name, data):
+        session_id = user_properties.get("session_id")
+        identity = user_properties.get("identity")
+        middleware_service = MiddlewareService()
 
-                        error_message = (
-                            f"Error invoking action {action_name} "
-                            f"in agent {self.info.get('agent_name', 'Unknown')}: \n\n"
-                            f"Exception name: {type(e).__name__}\n"
-                            f"Exception info: {str(e)}\n"
-                            f"Stack trace: {traceback.format_exc()}\n\n"
-                            f"Data: {json.dumps(data)}"
-                        )
-                        log.error(error_message)
-                        action_response = ActionResponse(
-                            message=f"Internal error: {type(e).__name__} - Error invoking action. Details: {str(e)}",
-                            error_info=ErrorInfo(
-                                error_message=error_message,
-                            ),
-                        )
-                else:
-                    log.warning(
-                        "Unauthorized access attempt for action %s. Data: %s",
-                        action_name,
-                        json.dumps(data),
-                    )
-                    action_response = ActionResponse(
-                        message="Unauthorized: You don't have permission to perform this action.",
-                    )
+        if not middleware_service.get("base_agent_filter")(user_properties, action):
+            log.warning(
+                "Unauthorized access attempt for action %s. Data: %s",
+                action_name,
+                json.dumps(data),
+            )
+            return ActionResponse(
+                message="Unauthorized: You don't have permission to perform this action.",
+            )
+        try:
+            meta = {
+                "session_id": session_id,
+                "identity": identity,
+            }
+            return action.invoke(resolved_params, meta)
+        except Exception as e:
+            error_message = (
+                f"Error invoking action {action_name} "
+                f"in agent {self.info.get('agent_name', 'Unknown')}: \n\n"
+                f"Exception name: {type(e).__name__}\n"
+                f"Exception info: {str(e)}\n"
+                f"Stack trace: {traceback.format_exc()}\n\n"
+                f"Data: {json.dumps(data)}"
+            )
+            log.error(error_message)
+            return ActionResponse(
+                message=f"Internal error: {type(e).__name__} - Error invoking action. Details: {str(e)}",
+                error_info=ErrorInfo(
+                    error_message=error_message,
+                ),
+            )
 
+    def _prepare_response_payload(self, action_response, action_name, data):
         action_response.action_list_id = data.get("action_list_id")
         action_response.action_idx = data.get("action_idx")
         action_response.action_name = action_name
         action_response.action_params = data.get("action_params", {})
         action_response.originator = data.get("originator", ORCHESTRATOR_COMPONENT_NAME)
         try:
-            action_response_dict = action_response.to_dict()
+            return action_response.to_dict()
         except Exception as e:
             log.error(
                 "Error after action %s in converting action response to dict: %s. Data: %s",
@@ -201,13 +197,43 @@ class BaseAgentComponent(LLMServiceComponentBase, ABC):
                 json.dumps(data),
                 exc_info=True,
             )
-            action_response_dict = {
+            return {
                 "message": "Internal error: Error converting action response to dict",
             }
 
+    def invoke(self, message, data):
+        """Invoke the component"""
+        action_name = data.get("action_name")
+        file_service = FileService()
+
+        validation_result = self._handle_action_validation(action_name, data)
+        if isinstance(validation_result, ActionResponse):
+            action_response_dict = self._prepare_response_payload(validation_result, action_name, data)
+            response_topic = f"{os.getenv('SOLACE_AGENT_MESH_NAMESPACE')}solace-agent-mesh/v1/actionResponse/agent/{self.info['agent_name']}/{action_name or 'unknown'}"
+            return {"payload": action_response_dict, "topic": response_topic}
+        
+        action = validation_result
+        
+        resolved_params = data.get("action_params", {}).copy()
+        user_properties = message.get_user_properties() or {}
+        session_id = user_properties.get("session_id")
+
+        resolved_params, file_error_response = self._resolve_action_parameters(
+            resolved_params, session_id, data, file_service
+        )
+        if file_error_response:
+            action_response_dict = self._prepare_response_payload(file_error_response, action_name, data)
+            response_topic = f"{os.getenv('SOLACE_AGENT_MESH_NAMESPACE')}solace-agent-mesh/v1/actionResponse/agent/{self.info['agent_name']}/{action_name}"
+            return {"payload": action_response_dict, "topic": response_topic}
+
+        action_response = self._execute_action(
+            action, resolved_params, user_properties, action_name, data
+        )
+
+        action_response_dict = self._prepare_response_payload(action_response, action_name, data)
+        
         # Construct the response topic
         response_topic = f"{os.getenv('SOLACE_AGENT_MESH_NAMESPACE')}solace-agent-mesh/v1/actionResponse/agent/{self.info['agent_name']}/{action_name}"
-
         return {"payload": action_response_dict, "topic": response_topic}
 
     def handle_timer_event(self, timer_data):
