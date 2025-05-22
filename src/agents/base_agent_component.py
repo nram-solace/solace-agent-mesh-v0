@@ -130,8 +130,11 @@ class BaseAgentComponent(LLMServiceComponentBase, ABC):
                 )
             else:
                 resolved_params = data.get("action_params", {}).copy()
+                user_properties = message.get_user_properties() or {}
+                session_id = user_properties.get("session_id")
+                identity = user_properties.get("identity")
+
                 try:
-                    session_id = (message.get_user_properties() or {}).get("session_id")
                     resolved_params = recursive_file_resolver(
                         resolved_params,
                         resolver=file_service.resolve_all_resolvable_urls,
@@ -149,10 +152,11 @@ class BaseAgentComponent(LLMServiceComponentBase, ABC):
                     )
 
                 middleware_service = MiddlewareService()
-                if middleware_service.get("base_agent_filter")(message.user_properties or {}, action):
+                if middleware_service.get("base_agent_filter")(user_properties, action):
                     try:
                         meta = {
                             "session_id": session_id,
+                            "identity": identity,
                         }
                         action_response = action.invoke(resolved_params, meta)
                     except Exception as e:
