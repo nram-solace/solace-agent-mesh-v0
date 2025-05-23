@@ -25,7 +25,7 @@ class MySQLDatabase:
             return self.connection.cursor(**kwargs)
 
     def connect(self):
-        self.connection = mysql.connector.connect(
+        return mysql.connector.connect(
             host=self.host,
             port=self.port,
             user=self.user,
@@ -38,19 +38,3 @@ class MySQLDatabase:
 
     def close(self):
         self.connection.close()
-
-    def execute(self, query, params=None):
-        sanity = 3
-        while True:
-            try:
-                cursor = self.cursor(dictionary=True)
-                cursor.execute(query, params)
-                break
-            except Exception as e:
-                from solace_ai_connector.common.log import log
-                log.error("Database error: %s", e)
-                sanity -= 1
-                if sanity == 0:
-                    raise e
-
-        return cursor

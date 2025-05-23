@@ -41,20 +41,12 @@ class SQLHistoryProvider(BaseHistoryProvider):
         """
         Ensures the required table exists in the database.
         """
-        if self.db_type == "mysql":
-            query = f"""
-            CREATE TABLE IF NOT EXISTS {self.table_name} (
-                session_id TEXT PRIMARY KEY,
-                data JSON
-            )
-            """
-        else:  # postgres
-            query = f"""
-            CREATE TABLE IF NOT EXISTS {self.table_name} (
-                session_id TEXT PRIMARY KEY,
-                data JSONB
-            )
-            """
+        query = f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name} (
+            session_id TEXT PRIMARY KEY,
+            data JSON
+        )
+        """
         self.db.execute(query)
     
     def store_session(self, session_id: str, data: dict):
