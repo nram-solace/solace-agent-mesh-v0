@@ -41,12 +41,20 @@ class SQLHistoryProvider(BaseHistoryProvider):
         """
         Ensures the required table exists in the database.
         """
-        query = f"""
-        CREATE TABLE IF NOT EXISTS {self.table_name} (
-            session_id TEXT PRIMARY KEY,
-            data JSON
-        )
-        """
+        if self.db_type == "mysql":
+            query = f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
+                session_id TEXT PRIMARY KEY,
+                data JSON
+            )
+            """
+        else:  # postgres
+            query = f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
+                session_id TEXT PRIMARY KEY,
+                data JSONB
+            )
+            """
         self.db.execute(query)
     
     def store_session(self, session_id: str, data: dict):
@@ -89,5 +97,8 @@ class SQLHistoryProvider(BaseHistoryProvider):
         """
         Delete a session by ID, ensuring only one row is deleted.
         """
-        query = f"DELETE FROM {self.table_name} WHERE session_id = %s LIMIT 1"
+        if self.db_type == "mysql":
+            query = f"DELETE FROM {self.table_name} WHERE session_id = %s LIMIT 1"
+        else:  # postgres
+            query = f"DELETE FROM {self.table_name} WHERE session_id = %s"
         self.db.execute(query, (session_id,))
