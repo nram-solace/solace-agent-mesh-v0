@@ -26,15 +26,15 @@ def create_app(shared_config=None):
     app = Flask(__name__)
     #CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5174", "http://127.0.0.1:5174"]}})
     # nram - hack to allow cross origin requests from the frontend
-    CORS(app, supports_credentials=True, resources={
-        r"/api/*": {
-            "origins": [
-                "http://20.127.157.178:5001",  # ✅ Add your frontend
-                "http://localhost:5174",       # (optional for local dev)
-                "http://127.0.0.1:5174"        # (optional for local dev)
-            ]
-        }
-    })
+    # CORS(app, supports_credentials=True, resources={
+    #     r"/api/*": {
+    #         "origins": [
+    #             "http://20.127.157.178:5001",  # ✅ Add your frontend
+    #             "http://localhost:5174",       # (optional for local dev)
+    #             "http://127.0.0.1:5174"        # (optional for local dev)
+    #         ]
+    #     }
+    # })
 
     EXCLUDE_OPTIONS = ["config_dir", "module_dir", "env_file", "build_dir", "container_engine", "rest_api_enabled",
                      "rest_api_server_input_port", "rest_api_server_host", "rest_api_server_input_endpoint", 
