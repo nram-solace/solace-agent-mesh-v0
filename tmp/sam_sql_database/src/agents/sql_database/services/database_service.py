@@ -162,8 +162,16 @@ class DatabaseService(ABC):
             # PostgreSQL requires DISTINCT ON when using ORDER BY
             query = f"SELECT DISTINCT ON ({column}) {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}, RANDOM() LIMIT {limit}"
         elif self.engine.name == 'mssql':
-            # MSSQL uses NEWID() for random ordering
-            query = f"SELECT DISTINCT TOP {limit} {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY NEWID()"
+            # MSSQL: Use TOP with subquery to get random distinct values
+            query = f"""
+            SELECT TOP {limit} {column} 
+            FROM (
+                SELECT DISTINCT {column} 
+                FROM {table} 
+                WHERE {column} IS NOT NULL
+            ) AS distinct_values 
+            ORDER BY NEWID()
+            """
         else:
             # SQLite uses RANDOM()
             query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
