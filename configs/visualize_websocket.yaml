@@ -37,6 +37,7 @@ flows:
           serve_html: false
           payload_encoding: none
           payload_format: json
+          cors_allowed_origins: []
         input_transforms:
           - type: copy
             source_expression: input.payload
