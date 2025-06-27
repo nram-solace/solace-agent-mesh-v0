@@ -144,6 +144,24 @@ class DatabaseService(ABC):
         inspector = inspect(self.engine)
         return inspector.get_indexes(table)
 
+    def _is_column_supported_for_distinct(self, column_type: str) -> bool:
+        """Check if a column type supports DISTINCT operations.
+        
+        Args:
+            column_type: SQLAlchemy column type as string
+            
+        Returns:
+            True if the column type supports DISTINCT, False otherwise
+        """
+        # MSSQL geography and geometry types don't support DISTINCT
+        unsupported_types = [
+            'geography', 'geometry', 'hierarchyid', 'sql_variant',
+            'timestamp', 'rowversion'
+        ]
+        
+        column_type_str = str(column_type).lower()
+        return not any(unsupported_type in column_type_str for unsupported_type in unsupported_types)
+
     def get_unique_values(self, table: str, column: str, limit: int = 3) -> List[Any]:
         """Get sample of unique values from a column.
         
@@ -155,26 +173,43 @@ class DatabaseService(ABC):
         Returns:
             List of unique values
         """
-        if self.engine.name == 'mysql':
-            # MySQL uses RAND() instead of RANDOM()
-            query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RAND() LIMIT {limit}"
-        elif self.engine.name == 'postgresql':
-            # PostgreSQL requires DISTINCT ON when using ORDER BY
-            query = f"SELECT DISTINCT ON ({column}) {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}, RANDOM() LIMIT {limit}"
-        elif self.engine.name == 'mssql':
-            # MSSQL: Use TOP with subquery to get random distinct values
-            query = f"""
-            SELECT TOP {limit} {column} 
-            FROM (
-                SELECT DISTINCT {column} 
-                FROM {table} 
-                WHERE {column} IS NOT NULL
-            ) AS distinct_values 
-            ORDER BY NEWID()
-            """
+        # Check if the column type supports DISTINCT operations
+        columns = self.get_columns(table)
+        column_info = next((col for col in columns if col["name"] == column), None)
+        
+        if column_info and not self._is_column_supported_for_distinct(column_info["type"]):
+            # For unsupported types, just get a few sample values without DISTINCT
+            if self.engine.name == 'mysql':
+                query = f"SELECT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RAND() LIMIT {limit}"
+            elif self.engine.name == 'postgresql':
+                query = f"SELECT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
+            elif self.engine.name == 'mssql':
+                query = f"SELECT TOP {limit} {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY NEWID()"
+            else:
+                query = f"SELECT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
         else:
-            # SQLite uses RANDOM()
-            query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
+            # Use DISTINCT for supported types
+            if self.engine.name == 'mysql':
+                # MySQL uses RAND() instead of RANDOM()
+                query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RAND() LIMIT {limit}"
+            elif self.engine.name == 'postgresql':
+                # PostgreSQL requires DISTINCT ON when using ORDER BY
+                query = f"SELECT DISTINCT ON ({column}) {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}, RANDOM() LIMIT {limit}"
+            elif self.engine.name == 'mssql':
+                # MSSQL: Use TOP with subquery to get random distinct values
+                query = f"""
+                SELECT TOP {limit} {column} 
+                FROM (
+                    SELECT DISTINCT {column} 
+                    FROM {table} 
+                    WHERE {column} IS NOT NULL
+                ) AS distinct_values 
+                ORDER BY NEWID()
+                """
+            else:
+                # SQLite uses RANDOM()
+                query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
+        
         results = self.execute_query(query)
         return [row[column] for row in results]
 
