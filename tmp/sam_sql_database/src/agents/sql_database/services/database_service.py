@@ -110,7 +110,7 @@ class DatabaseService(ABC):
         # Filter out unsupported column types
         supported_columns = []
         for column in all_columns:
-            if self._is_column_supported_for_distinct(column["type"]):
+            if self._is_column_supported_for_distinct(column["type"], column["name"]):
                 supported_columns.append(column)
             else:
                 # Log that we're skipping unsupported column types
@@ -155,11 +155,12 @@ class DatabaseService(ABC):
         inspector = inspect(self.engine)
         return inspector.get_indexes(table)
 
-    def _is_column_supported_for_distinct(self, column_type: str) -> bool:
+    def _is_column_supported_for_distinct(self, column_type: str, column_name: str = None) -> bool:
         """Check if a column type supports DISTINCT operations.
         
         Args:
             column_type: SQLAlchemy column type as string
+            column_name: Optional column name for additional checks
             
         Returns:
             True if the column type supports DISTINCT, False otherwise
@@ -170,8 +171,37 @@ class DatabaseService(ABC):
             'timestamp', 'rowversion'
         ]
         
-        column_type_str = str(column_type).lower()
-        return not any(unsupported_type in column_type_str for unsupported_type in unsupported_types)
+        # Handle both string and SQLAlchemy type objects
+        if hasattr(column_type, 'name'):
+            # SQLAlchemy type object
+            type_name = column_type.name.lower()
+        else:
+            # String representation
+            type_name = str(column_type).lower()
+        
+        # Check if any unsupported type is in the type name
+        for unsupported_type in unsupported_types:
+            if unsupported_type in type_name:
+                return False
+        
+        # Additional check for SQLAlchemy generic types that might be unrecognized
+        if hasattr(column_type, '__class__') and 'Type' in str(column_type.__class__):
+            # This might be a generic/unrecognized type, be more cautious
+            type_str = str(column_type).lower()
+            if any(unsupported_type in type_str for unsupported_type in unsupported_types):
+                return False
+        
+        # Additional check based on column name (for cases where SQLAlchemy doesn't recognize the type)
+        if column_name:
+            column_name_lower = column_name.lower()
+            # Common column names that might be geography/geometry types
+            spatial_indicators = ['location', 'geom', 'geometry', 'geography', 'shape', 'spatial', 'coord']
+            if any(indicator in column_name_lower for indicator in spatial_indicators):
+                # If the type is unrecognized and column name suggests spatial data, be cautious
+                if 'Type' in str(column_type.__class__) or 'UNKNOWN' in str(column_type).upper():
+                    return False
+        
+        return True
 
     def get_unique_values(self, table: str, column: str, limit: int = 3) -> List[Any]:
         """Get sample of unique values from a column.
@@ -188,7 +218,7 @@ class DatabaseService(ABC):
         columns = self.get_columns(table)
         column_info = next((col for col in columns if col["name"] == column), None)
         
-        if column_info and not self._is_column_supported_for_distinct(column_info["type"]):
+        if column_info and not self._is_column_supported_for_distinct(column_info["type"], column_info["name"]):
             # For unsupported types, just get a few sample values without DISTINCT
             if self.engine.name == 'mysql':
                 query = f"SELECT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RAND() LIMIT {limit}"
