@@ -105,7 +105,18 @@ class DatabaseService(ABC):
             List of column details including name, type, nullable, etc.
         """
         inspector = inspect(self.engine)
-        return inspector.get_columns(table)
+        all_columns = inspector.get_columns(table)
+        
+        # Filter out unsupported column types
+        supported_columns = []
+        for column in all_columns:
+            if self._is_column_supported_for_distinct(column["type"]):
+                supported_columns.append(column)
+            else:
+                # Log that we're skipping unsupported column types
+                log.debug(f"Skipping column '{column['name']}' with unsupported type '{column['type']}' for schema detection")
+        
+        return supported_columns
 
     def get_primary_keys(self, table: str) -> List[str]:
         """Get primary key columns for a table.
