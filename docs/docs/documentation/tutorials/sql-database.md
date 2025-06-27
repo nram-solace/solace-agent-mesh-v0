@@ -5,7 +5,7 @@ sidebar_position: 40
 
 # SQL Database Integration
 
-This tutorial will set up a SQL database agent in Solace Agent Mesh (SAM), which allows SAM to answer natural language queries about a sample coffee company database. This tutorial provides some sample data to set up an SQLite database, but you can use the same approach to connect to other database types, such as MySQL or PostgreSQL.
+This tutorial will set up a SQL database agent in Solace Agent Mesh (SAM), which allows SAM to answer natural language queries about a sample coffee company database. This tutorial provides some sample data to set up an SQLite database, but you can use the same approach to connect to other database types, such as MySQL, PostgreSQL, or Microsoft SQL Server.
 
 ## Prerequisites
 
@@ -92,7 +92,7 @@ ABC_COFFEE_INFO_DB_DESCRIPTION="Contains information about ABC Coffee Co. produc
 # You can leave other environment variables as unset or empty
 ```
 
-SQLite stores the database in a local file and doesn't require a username or password for access. If you're using a database such as MySQL or PostgreSQL, you'll need to provide the appropriate environment variables for them.
+SQLite stores the database in a local file and doesn't require a username or password for access. If you're using a database such as MySQL, PostgreSQL, or Microsoft SQL Server, you'll need to provide the appropriate environment variables for them.
 
 ## Running the Agent
 
@@ -142,6 +142,6 @@ When the agent initializes, it learns the schemas for each of the mentioned tabl
 
 ## Conclusion
 
-You've successfully set up a SQL Database agent in Solace Agent Mesh that can answer natural language queries about the ABC Coffee Co. database. The same approach can be applied to connect to other database types, such as MySQL or PostgreSQL - you only need to adjust the configuration and environment variables accordingly.
+You've successfully set up a SQL Database agent in Solace Agent Mesh that can answer natural language queries about the ABC Coffee Co. database. The same approach can be applied to connect to other database types, such as MySQL, PostgreSQL, or Microsoft SQL Server - you only need to adjust the configuration and environment variables accordingly.
 
 For more information about the SQL Database plugin, see [plugin README](https://github.com/SolaceLabs/solace-agent-mesh-core-plugins/blob/main/sam-sql-database/README.md).

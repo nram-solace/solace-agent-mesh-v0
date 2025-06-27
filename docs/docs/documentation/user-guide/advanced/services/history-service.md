@@ -184,19 +184,27 @@ pip install pymongo
 The SQL history provider stores history in a SQL database. This provider is useful for storing history data that needs to be persisted across restarts and shared across multiple instances of the application.
 
 The SQL provider requires the following configuration:
-- db_type (*required* - *string*): The type of SQL database to use. Supported values are `postgres` and `mysql`.
+- db_type (*required* - *string*): The type of SQL database to use. Supported values are `postgres`, `mysql`, and `mssql`.
 - sql_host (*required* - *string*): The hostname of the SQL server.
 - sql_user (*required* - *string*): The username to use to connect to the SQL server.
 - sql_password (*required* - *string*): The password to use to connect to the SQL server.
 - sql_database (*required* - *string*): The name of the database to use in the SQL server.
 - table_name (*optional* - *string* - *default*: `session_history`): The name of the table to use in the SQL database.
 
-The SQL provider requires the `psycopg2` package for PostgreSQL or the `mysql-connector-python` package for MySQL. To install the packages, run the following commands:
+The SQL provider requires the following packages based on the database type:
+- `psycopg2` package for PostgreSQL
+- `mysql-connector-python` package for MySQL  
+- `pyodbc` package for Microsoft SQL Server
+
+To install the packages, run the following commands:
 
 ```bash
-pip install psycopg2_binary mysql-connector-python
+pip install psycopg2_binary mysql-connector-python pyodbc
 ```
 
+:::note
+For MSSQL connections, you may also need to install the Microsoft ODBC Driver for SQL Server on your system. The driver name used in the connection string is "ODBC Driver 17 for SQL Server".
+:::
 
 ### Custom History Provider
 
