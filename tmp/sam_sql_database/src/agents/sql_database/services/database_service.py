@@ -161,6 +161,9 @@ class DatabaseService(ABC):
         elif self.engine.name == 'postgresql':
             # PostgreSQL requires DISTINCT ON when using ORDER BY
             query = f"SELECT DISTINCT ON ({column}) {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}, RANDOM() LIMIT {limit}"
+        elif self.engine.name == 'mssql':
+            # MSSQL uses NEWID() for random ordering
+            query = f"SELECT DISTINCT TOP {limit} {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY NEWID()"
         else:
             # SQLite uses RANDOM()
             query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
@@ -253,6 +256,35 @@ class SQLiteService(DatabaseService):
         return sa.create_engine(
             connection_url,
             pool_size=1,  # SQLite doesn't support concurrent connections
+            pool_recycle=1800,
+            pool_pre_ping=True,
+            connect_args={"timeout": self.query_timeout}
+        )
+
+
+class MSSQLService(DatabaseService):
+    """Microsoft SQL Server database service implementation."""
+    
+    def _create_engine(self) -> Engine:
+        """Create MSSQL database engine."""
+        connection_url = sa.URL.create(
+            "mssql+pyodbc",
+            username=self.connection_params.get("user"),
+            password=self.connection_params.get("password"),
+            host=self.connection_params.get("host"),
+            port=self.connection_params.get("port"),
+            database=self.connection_params.get("database"),
+            query={
+                "driver": "ODBC Driver 17 for SQL Server",
+                "TrustServerCertificate": "yes"
+            }
+        )
+        
+        return sa.create_engine(
+            connection_url,
+            pool_size=5,
+            max_overflow=10,
+            pool_timeout=30,
             pool_recycle=1800,
             pool_pre_ping=True,
             connect_args={"timeout": self.query_timeout}

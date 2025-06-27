@@ -15,7 +15,7 @@ from .services.database_service import (
     MySQLService,
     PostgresService,
     SQLiteService,
-    MSSQLDatabase # nram
+    MSSQLService,
 )
 from .actions.search_query import SearchQuery
 
@@ -265,7 +265,7 @@ class SQLDatabaseAgentComponent(BaseAgentComponent):
         if self.db_type == "mysql":
             return MySQLService(connection_params, query_timeout=self.query_timeout)
         if self.db_type == "mssql":
-            return MSSQLDatabase(connection_params, query_timeout=self.query_timeout)
+            return MSSQLService(connection_params, query_timeout=self.query_timeout)
         elif self.db_type == "postgres":
             return PostgresService(connection_params, query_timeout=self.query_timeout)
         elif self.db_type in ("sqlite", "sqlite3"):
