@@ -3,6 +3,7 @@ import json
 from .base_history_provider import BaseHistoryProvider
 from ....common.postgres_database import PostgreSQLDatabase
 from ....common.mysql_database import MySQLDatabase
+from ....common.mssql_database import MSSQLDatabase
 
 
 class DatabaseFactory:
@@ -12,6 +13,7 @@ class DatabaseFactory:
     DATABASE_PROVIDERS = {
         "postgres": PostgreSQLDatabase,
         "mysql": MySQLDatabase,
+        "mssql": MSSQLDatabase,
     }
 
     @staticmethod
@@ -41,12 +43,22 @@ class SQLHistoryProvider(BaseHistoryProvider):
         """
         Ensures the required table exists in the database.
         """
-        query = f"""
-        CREATE TABLE IF NOT EXISTS {self.table_name} (
-            session_id TEXT PRIMARY KEY,
-            data JSON
-        )
-        """
+        if self.db_type == "mssql":
+            # MSSQL uses NVARCHAR(MAX) for JSON and requires different syntax
+            query = f"""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{self.table_name}' AND xtype='U')
+            CREATE TABLE {self.table_name} (
+                session_id NVARCHAR(255) PRIMARY KEY,
+                data NVARCHAR(MAX)
+            )
+            """
+        else:
+            query = f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
+                session_id TEXT PRIMARY KEY,
+                data JSON
+            )
+            """
         self.db.execute(query)
     
     def store_session(self, session_id: str, data: dict):
@@ -65,6 +77,16 @@ class SQLHistoryProvider(BaseHistoryProvider):
             INSERT INTO {self.table_name} (session_id, data) 
             VALUES (%s, %s) 
             ON DUPLICATE KEY UPDATE data = VALUES(data)
+            """
+        elif self.db_type == "mssql":
+            query = f"""
+            MERGE {self.table_name} AS target
+            USING (SELECT %s AS session_id, %s AS data) AS source
+            ON target.session_id = source.session_id
+            WHEN MATCHED THEN
+                UPDATE SET data = source.data
+            WHEN NOT MATCHED THEN
+                INSERT (session_id, data) VALUES (source.session_id, source.data);
             """
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
