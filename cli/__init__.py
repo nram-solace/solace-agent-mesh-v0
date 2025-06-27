@@ -1,1 +1,1 @@
-__version__ = "0.2.4-nram"
+__version__ = "0.2.5+local.nram"
