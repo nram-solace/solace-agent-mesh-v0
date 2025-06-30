@@ -1,0 +1,12 @@
+#!/bin/bash
+# copy this file to  /etc/cron.daily/restart-sam
+
+LOGFILE="/var/log/restart-sam.log"
+echo "==== $(date): Restarting SAM ====" >> "$LOGFILE"
+
+/home/azureuser/sam/current/ccgoldminer/scripts/stop-sam.sh >> "$LOGFILE" 2>&1
+sleep 5
+/home/azureuser/sam/current/ccgoldminer/scripts/start-sam.sh >> "$LOGFILE" 2>&1
+
+echo "==== Done ====" >> "$LOGFILE"
+

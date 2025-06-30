@@ -1,0 +1,11 @@
+# copy this file to /etc/logrotate.d/sam
+/home/azureuser/sam/current/ccgoldminer/*.log
+/home/azureuser/sam/current/ccgoldminer/log/*.log {
+    size 10485760
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+

@@ -1,0 +1,4 @@
+#!/bin/bash
+# copy this file to  /etc/cron.hourly/logrotate-sam
+/usr/sbin/logrotate -s /var/lib/logrotate/sam.status /etc/logrotate.d/sam
+
