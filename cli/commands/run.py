@@ -1,6 +1,8 @@
 import sys
 import os
 import click
+import threading
+import time
 
 from cli.commands.build import build_command
 from cli.utils import log_error, log_success
@@ -16,6 +18,18 @@ def run_solace_ai_connector(configs):
 
     sys.argv = [sys.argv[0].replace("solace-agent-mesh", "solace-ai-connector"), *configs]
     return sys.exit(main())
+
+
+def print_startup_success():
+    """Print a prominent startup success message after a short delay."""
+    time.sleep(2)  # Wait for the connector to start
+    click.echo()
+    click.echo(click.style("🎉 SOLACE AI EVENT CONNECTOR STARTED SUCCESSFULLY! 🎉", fg="green", bold=True))
+    click.echo(click.style("=" * 70, fg="green", bold=True))
+    click.echo(click.style("   All components are now running and ready to process requests", fg="green"))
+    click.echo(click.style("   Solace Agent Mesh is fully operational", fg="green"))
+    click.echo(click.style("=" * 70, fg="green", bold=True))
+    click.echo()
 
 
 FILES_TO_EXCLUDE = []
@@ -80,5 +94,9 @@ def run_command(
     click.echo(click.style(f"   Solace Agent Mesh version {__version__} is ready to start", fg="green"))
     click.echo(click.style("   Launching components...", fg="green"))
     click.echo()
+
+    # Start a background thread to print the startup success message
+    success_thread = threading.Thread(target=print_startup_success, daemon=True)
+    success_thread.start()
 
     return run_solace_ai_connector(config_files)
