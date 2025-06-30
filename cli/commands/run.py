@@ -3,7 +3,8 @@ import os
 import click
 
 from cli.commands.build import build_command
-from cli.utils import log_error
+from cli.utils import log_error, log_success
+from cli import __version__
 
 
 def run_solace_ai_connector(configs):
@@ -25,6 +26,14 @@ def run_command(
 ):
     """Run the Solace Agent Mesh application."""
 
+    # Print prominent version banner when attempting to start
+    click.echo()
+    click.echo(click.style("=" * 60, fg="blue", bold=True))
+    click.echo(click.style(f"🚀 STARTING SOLACE AGENT MESH", fg="blue", bold=True))
+    click.echo(click.style(f"   Version: {__version__}", fg="cyan", bold=True))
+    click.echo(click.style("=" * 60, fg="blue", bold=True))
+    click.echo()
+
     config = click.get_current_context().obj["solace_agent_mesh"]
     build_dir = config["build"]["build_directory"]
     build_config_dir = os.path.join(build_dir, "configs")
@@ -32,7 +41,7 @@ def run_command(
     if force_build or (not ignore_build and not os.path.exists(build_dir)):
         build_command(skip_without_asking=quick_build)
 
-    click.echo("Running Solace Agent Mesh application")
+    click.echo(click.style("📋 Initializing Solace Agent Mesh application...", fg="yellow"))
 
     if not use_system_env:
         try:
@@ -64,5 +73,12 @@ def run_command(
     # only basename of the files
     exclude_files = [os.path.basename(f) for f in exclude_files] + FILES_TO_EXCLUDE
     config_files = [f for f in config_files if os.path.basename(f) not in exclude_files]
+
+    # Print prominent success message with version before starting the connector
+    click.echo()
+    click.echo(click.style("✅ SUCCESS!", fg="green", bold=True))
+    click.echo(click.style(f"   Solace Agent Mesh version {__version__} is ready to start", fg="green"))
+    click.echo(click.style("   Launching components...", fg="green"))
+    click.echo()
 
     return run_solace_ai_connector(config_files)
