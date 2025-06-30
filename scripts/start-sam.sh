@@ -15,11 +15,6 @@ fi
 #fi
 #echo $0: SAM binary is $SAMBIN
 
-echo Cleanup old logs
-[ -d ./logs ] || mkdir logs
-rm logs/* *.log trace*txt 2> /dev/null
-LOGFILE=./logs/sam.log
-cd $SAMHOME
 
 echo Check if SAM is running already
 pid=`pgrep -f ""$SAMBIN""`
@@ -40,6 +35,12 @@ sudo docker start solace
 sleep 10 #  WARNING! This is not enough time
 sudo docker ps | egrep "CONTAINER|solace"
 sudo docker inspect -f '{{.State.Running}}' solace
+
+echo Cleanup old logs
+[ -d ./logs ] || mkdir logs
+rm logs/* *.log trace*txt 2> /dev/null
+LOGFILE=./logs/sam.log
+cd $SAMHOME
 
 echo Start SAM 
 echo $SAMBIN run -b ...
